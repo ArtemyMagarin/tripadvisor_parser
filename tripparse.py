@@ -1,4 +1,6 @@
+import os
 import re
+import pickle
 import requests
 from pprint import pprint
 from bs4 import BeautifulSoup 
@@ -68,7 +70,11 @@ def getReviewIds(url):
 
     ids += [getIdFromSoup(elem) for elem in soup.findAll('div', {'class': 'review-container'})] 
 
-    lastIndex = int(soup.find('a', {'class': 'last'})['data-offset'])
+    try:
+        lastIndex = int(soup.find('a', {'class': 'last'})['data-offset'])
+    except Exception:
+        return ids
+
 
     s.headers["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"
     s.headers["authority"] = "www.tripadvisor.ru"
@@ -125,11 +131,22 @@ def getReviewsByIds(ids):
     
     
 TEST_URL = 'https://www.tripadvisor.ru/Attraction_Review-g298507-d302241-Reviews-Trinity_Bridge-St_Petersburg_Northwestern_District.html'
-ids = getReviewIds(TEST_URL)
-pprint(getReviewsByIds(ids))
+URLS = [ TEST_URL, ]
+
+__currdir = os.path.abspath(os.getcwd())
+__outputdir = os.path.join(__currdir, 'output')
+
+if not os.path.exists( __outputdir ):
+    os.mkdir( __outputdir )
 
 
+for url in URLS: 
+    fname = url[:url.rfind('-')]
+    fname = fname[fname.rfind('-')+1:]
+    fname += ".pickle"
 
+    data = getReviewsByIds(getReviewIds(url))
 
-
+    with open( os.path.join(__outputdir, fname), 'wb' ) as f:
+        pickle.dump(data, f)
 
